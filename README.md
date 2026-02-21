@@ -1,29 +1,29 @@
 # Adaptive Discharge AI
 
-Adaptive Discharge AI е human-centered AI приложение, което използва HAI-DEF модел (MedGemma) за адаптиране на клинични discharge инструкции според профила/здравната грамотност на пациента. Цел: по-добро разбиране, по-висока придържаност и по-нисък риск от повторна хоспитализация.
+Adaptive Discharge AI is a human-centered AI application that uses the HAI-DEF model (MedGemma) to adapt clinical discharge instructions to the patient’s profile/health literacy. Goal: better understanding, higher adherence, and lower risk of readmission.
 
-## Основни възможности
+## Key features
 
-- Автоматично извличане на ключови секции от discharge текст (Medications, Follow-up, Safety, Wound care, Emergency, Other).
-- Преписване на инструкциите според пациентски профил: `low_literacy`, `elderly`, `standard` (кратки изречения, без добавена информация, без промяна на числа).
-- Пост-валидационна рамка (числата и критични думи трябва да се запазят; четивност преди/след).
-- Лек уеб интерфейс (Streamlit) за бърза демонстрация.
+- Automatic extraction of key sections from discharge text (Medications, Follow-up, Safety, Wound care, Emergency, Other).
+- Rewriting instructions based on patient profile: `low_literacy`, `elderly`, `standard` (short sentences, no added information, no changes to numbers).
+- Post-validation framework (numbers and critical terms must be preserved; readability before/after).
+- Lightweight web interface (Streamlit) for quick demos.
 
-## Технологии
+## Technologies
 
 - Python 3.10+
 - PyTorch + Hugging Face Transformers
 - MedGemma (HAI-DEF)
-- BitsAndBytes за 4-bit quant (GPU)
-- Streamlit за UI
-- textstat / readability-lxml за четивност
+- BitsAndBytes for 4-bit quantization (GPU)
+- Streamlit for UI
+- textstat / readability-lxml for readability
 
-## Режими на работа
+## Modes of operation
 
-1) Full (препоръчително, Colab/GPU): зарежда MedGemma в 4-bit (`bitsandbytes`) и изпълнява секционно прегенериране. Подходящ за демонстрация и запис на видео.
-2) Lite (локално, 4 GB RAM): UI и стъпки по извличане на секции; LLM inference е ограничен/бавен на CPU и не е препоръчителен. Използвайте Full в Colab за реални резултати.
+1) Full (recommended, Colab/GPU): loads MedGemma in 4-bit (`bitsandbytes`) and performs section-wise regeneration. Suitable for demos and video recording.
+2) Lite (local, 4 GB RAM): UI and steps for section extraction; LLM inference is limited/slow on CPU and not recommended. Use Full mode in Colab for real results.
 
-## Инсталация (локално)
+## Installation (local)
 
 ```bash
 git clone <repo_url>
@@ -33,70 +33,70 @@ source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-По желание: задайте модел чрез променлива на средата (по подразбиране е `google/medgemma-4b-it`):
+Optional: set the model via environment variable (default is `google/medgemma-4b-it`):
 
 ```bash
 export MODEL_ID=google/medgemma-4b-it
 ```
 
-## Стартиране на UI (Streamlit)
+## Launch the UI (Streamlit)
 
 ```bash
 streamlit run add/main.py
 ```
 
-Въведете discharge текст в полето, изберете профил и натиснете "Simplify". На машина без GPU моделът може да е твърде тежък – използвайте Full режим в Colab.
+Enter the discharge text in the input, choose a profile, and click "Simplify." On a machine without a GPU, the model may be too heavy — use Full mode in Colab.
 
-## Бележки за производителност и памет
+## Performance and memory notes
 
-- На GPU: моделът се зарежда в 4-bit (NF4) чрез `bitsandbytes` автоматично, ако има налична CUDA.
-- На CPU: зареждането е fp32 и е предназначено само за кратки smoke тестове. За 4 GB RAM препоръчваме Colab.
+- On GPU: the model loads in 4-bit (NF4) via `bitsandbytes` automatically if CUDA is available.
+- On CPU: loading is fp32 and intended only for short smoke tests. For 4 GB RAM we recommend Colab.
 
-## Структура на проекта
+## Project structure
 
 ```
 MedSimp/
 ├─ add/
 │  ├─ main.py          # Streamlit UI
-│  ├─ inference.py     # Зареждане на модела и генериране по секции
-│  ├─ structure.py     # Детерминистично извличане на секции
-│  ├─ prompts.py       # Помощни промптове (по избор)
-│  ├─ litteracy.py     # Профилни модификатори и четивност (утилити)
-│  └─ test_prompt.py   # Примерен CLI тест
+│  ├─ inference.py     # Model loading and section-wise generation
+│  ├─ structure.py     # Deterministic section extraction
+│  ├─ prompts.py       # Helper prompts (optional)
+│  ├─ litteracy.py     # Profile modifiers and readability utilities
+│  └─ test_prompt.py   # Example CLI test
 ├─ requirements.txt
 └─ README.md
 ```
 
-## Бърз тест от конзола
+## Quick console test
 
 ```bash
 python add/test_prompt.py
 ```
 
-Това извлича секции от примерен текст, зарежда модела и генерира адаптирани инструкции според профил.
+This extracts sections from a sample text, loads the model, and generates adapted instructions based on the selected profile.
 
-## Репродуцируемост (за състезанието)
+## Reproducibility (for the competition)
 
-- Публично репо (този проект).
-- Full режим през Google Colab (T4/Л4 GPU) с `bitsandbytes` и фиксирани версии от `requirements.txt`.
-- Lite локален режим за демонстрация на UI и pipeline без тежко inference.
+- Public repo (this project).
+- Full mode via Google Colab (T4/L4 GPU) with `bitsandbytes` and pinned versions from `requirements.txt`.
+- Lite local mode to demonstrate the UI and pipeline without heavy inference.
 
-## Colab Notebook (официален репро път)
+## Colab Notebook (official repro path)
 
-- Notebook: `notebooks/Adaptive_Discharge_AI_Colab.ipynb` (отворете в Google Colab; задайте Runtime → GPU).
-- Алтернатива: използвайте `add/colab_demo.py` директно в Colab среда.
+- Notebook: `notebooks/Adaptive_Discharge_AI_Colab.ipynb` (open in Google Colab; set Runtime → GPU).
+- Alternative: use `add/colab_demo.py` directly in a Colab environment.
 
-## Валидиране и метрики
+## Validation and metrics
 
-- Синтетичен сет: `data/synthetic_validation.jsonl` (без PHI).
-- Скрипт за метрики: `python add/metrics_eval.py` → записва `data/metrics_results.csv` и принтира агрегати (FKGL/SMOG, length ratio, numbers preserved).
+- Synthetic set: `data/synthetic_validation.jsonl` (no PHI).
+- Metrics script: `python add/metrics_eval.py` → writes `data/metrics_results.csv` and prints aggregates (FKGL/SMOG, length ratio, numbers preserved).
 
 ## Known limitations / FAQ
 
-- „Може ли локално на 4 GB RAM?“ — Инференсът на MedGemma на CPU е тежък и не е препоръчителен. Използвайте Colab/GPU (Full режим). Локалният „Lite“ режим е за UI и секциониране.
-- „Защо MedGemma?“ — Отворен, домейн‑адаптиран модел за медицински текст. По‑подходящ за терминология и безопасност спрямо общи LLM‑и.
-- „Как гарантирате безопасност?“ — Секционно прегенериране, строги промптове и пост‑валидация: числа/единици/критични думи се съпоставят; при нарушение → строг retry → безопасен fallback.
+- "Can it run locally on 4 GB RAM?" — MedGemma inference on CPU is heavy and not recommended. Use Colab/GPU (Full mode). The local "Lite" mode is for UI and sectioning.
+- "Why MedGemma?" — An open, domain-adapted model for medical text. More suitable for terminology and safety compared to general-purpose LLMs.
+- "How do you ensure safety?" — Section-wise regeneration, strict prompts, and post-validation: numbers/units/critical terms are checked; on violation → strict retry → safe fallback.
 
-## Лиценз и отговорност
+## License and responsibility
 
-Проектът е демонстрационен и не замества медицински съвет. Не включвайте PHI/лични данни. Проверката на съдържанието от клиницист е задължителна преди реална употреба.
+This project is for demonstration purposes and does not replace medical advice. Do not include PHI/personal data. Content must be reviewed by a clinician before any real-world use.
