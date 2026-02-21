@@ -1,0 +1,63 @@
+Project name
+Adaptive Discharge AI
+Your team
+•
+Galya — Product & Engineering (end‑to‑end), prompt design, UI (Streamlit), evaluation/metrics
+•
+
+Problem statement
+Hospital discharge instructions are often written at a high reading level (≥10th grade), filled with clinical jargon and scattered safety cues. Patients with low health literacy and older adults have difficulty understanding these instructions, leading to poorer adherence, avoidable complications, and readmissions. Even small misunderstandings about medication timing (e.g., “10 mg twice daily”), activity restrictions (“no driving for 24 hours”), or red‑flag symptoms (“call 911 for chest pain”) can cause harm.
+Unmet need: a privacy‑respecting, reliable assistant that rewrites discharge instructions into clear, patient‑appropriate language without changing numbers, doses, or medical facts, and that highlights when to seek urgent help. The target users are patients (and their caregivers) at discharge and clinical staff who want to provide safer, simpler take‑home instructions quickly.
+Impact potential: Improving readability from ~10–12th to ~6–8th grade can increase comprehension and adherence. In our synthetic validation set (n=14), Adaptive Discharge AI achieves substantial FKGL reductions with 100% number preservation under our guardrails. Clinically, even modest gains in understanding can reduce after‑discharge calls, medication errors, and readmissions. Because the system is section‑aware and safety‑validated, it focuses improvements where they matter most (medications, emergency red flags).
+Overall solution
+Adaptive Discharge AI is an agentic, section‑based rewriting pipeline powered by Google’s HAI‑DEF model MedGemma. The application:
+•
+Deterministically extracts key sections from discharge text: Medications, Follow‑up, Safety, Wound care, Emergency, Other.
+•
+Adapts the rewriting to patient profiles (low_literacy, elderly, standard, plus clinical variants like post_surgery, cardiac).
+•
+Uses MedGemma (instruction‑tuned) to rewrite each section into short, plain‑language bullets while strictly avoiding addition/removal of facts and any change to numbers.
+•
+Applies post‑validation guardrails: number/units lock and critical keyword preservation (e.g., “911”, “chest pain”, “difficulty breathing”). On violation, it retries with stricter prompts; if still unsafe, falls back to the original section text.
+Why HAI‑DEF (MedGemma): MedGemma’s domain adaptation improves handling of clinical terms and safety cues versus general LLMs. Open weights enable privacy‑preserving deployments and fine‑grained controls (quantization, on‑prem), aligning with healthcare environments that can’t rely on closed models or constant cloud access.
+
+Technical details
+System architecture (agentic workflow):
+1)
+Section extractor (add/structure.py) — deterministic keyword rules route lines into sections, reducing context length and hallucination risk.
+2)
+Profile adapter (add/litteracy.py) — centralized modifiers for low_literacy, elderly, standard (extended with post_surgery, cardiac).
+3)
+MedGemma inference (add/inference.py) — loads google/medgemma-4b-it by default; if CUDA is available, runs 4‑bit NF4 quantization via bitsandbytes (device_map='auto'), else CPU fp32 fallback for smoke tests. Generation is deterministic (temperature=0.0, do_sample=False, repetition_penalty=1.2, max_new_tokens≈160).
+4)
+Guardrails — _extract_numbers_units(...) parses numbers, units (mg, ml, hours, days, bpm, mmHg) and critical words; _passes_safety(...) enforces equality/subset checks. On failure → one strict retry; if still failing → safe fallback to the original section.
+5)
+UI (add/main.py) — Streamlit app. Shows “Simplified Instructions” and a “Quality & Safety Checks” panel: FKGL before/after, length ratio, and a numbers/critical‑words preserved badge.
+Reproducibility and evaluation:
+•
+Colab notebook (notebooks/Adaptive_Discharge_AI_Colab.ipynb) — one‑click GPU run with pinned versions (requirements.txt).
+•
+Metrics script (add/metrics_eval.py) — runs the pipeline on a synthetic, non‑PHI set (data/synthetic_validation.jsonl) and outputs CSV aggregates: FKGL/SMOG before/after, length ratio, numbers preserved.
+•
+Target outcomes on the synthetic set: meaningful FKGL drop (≥3–4 points), numbers preserved 100%, length ratio 0.7–1.0.
+Deployment feasibility:
+•
+Today: Colab/GPU “Full” mode using 4‑bit quantization; local “Lite” mode for UI/smoke tests on low‑RAM machines.
+•
+Near‑term: containerized GPU service (T4/L4); on‑prem inference with quantized MedGemma; EMR integration via exportable Markdown/PDF sections.
+•
+Edge pathway (future work): quantized smaller variants (e.g., 2B int4 GGUF via llama.cpp), distillation to a compact student for on‑device checks, and executing guardrails locally even without LLM.
+Limitations and safety:
+•
+No PHI; demo only; clinician review required for real use.
+•
+CPU‑only 4 GB RAM is insufficient for practical MedGemma inference; use Colab/GPU.
+•
+Guardrails reduce, but don’t eliminate, hallucination risks; we default to safe fallbacks.
+Links (to include in Kaggle write‑up):
+•
+Public repo: [insert GitHub/Kaggle link]
+•
+Colab notebook: notebooks/Adaptive_Discharge_AI_Colab.ipynb
+•
+Optional live demo: Streamlit (run in Colab or GPU VM)
